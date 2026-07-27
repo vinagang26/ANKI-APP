@@ -1,71 +1,92 @@
 const storage = {
     STORAGE_KEY: 'chinese-vocab-cards',
+    cachedCards: null,
 
     /**
-     * Load all cards from localStorage.
-     * @returns {array} array of card objects, or empty array if none exist
+     * Load all cards. Uses PyWebView Python API if available, else localStorage.
      */
-    getCards() {
+    async loadCards() {
+        // Check if PyWebView is present
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.load_cards) {
+            try {
+                const pyCards = await window.pywebview.api.load_cards();
+                if (Array.isArray(pyCards) && pyCards.length > 0) {
+                    this.cachedCards = pyCards;
+                    try {
+                        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(pyCards));
+                    } catch (e) {}
+                    return pyCards;
+                }
+            } catch (error) {
+                console.error('Error loading cards from Python API:', error);
+            }
+        }
+
+        // Fallback to localStorage
         try {
             const data = localStorage.getItem(this.STORAGE_KEY);
-            if (!data) {
-                return [];
-            }
-            return JSON.parse(data);
+            this.cachedCards = data ? JSON.parse(data) : [];
         } catch (error) {
             console.error('Failed to load cards from localStorage:', error);
+            this.cachedCards = [];
+        }
+
+        return this.cachedCards;
+    },
+
+    /**
+     * Synchronous get cards from memory or localStorage.
+     */
+    getCards() {
+        if (this.cachedCards !== null) {
+            return this.cachedCards;
+        }
+        try {
+            const data = localStorage.getItem(this.STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch (error) {
             return [];
         }
     },
 
-    /**
-     * Save a new card to localStorage.
-     * Appends to the existing collection.
-     * @param {object} card - card object to save
-     */
     saveCard(card) {
-        try {
-            const cards = this.getCards();
-            cards.push(card);
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cards));
-        } catch (error) {
-            console.error('Failed to save card to localStorage:', error);
-            throw error;
-        }
+        const cards = this.getCards();
+        cards.push(card);
+        this.saveAllCards(cards);
     },
 
-    /**
-     * Update an existing card in localStorage.
-     * Finds card by id and replaces it.
-     * @param {object} card - card object with id field
-     */
     updateCard(card) {
-        try {
-            const cards = this.getCards();
-            const index = cards.findIndex(c => c.id === card.id);
-            if (index === -1) {
-                throw new Error(`Card with id ${card.id} not found`);
-            }
+        const cards = this.getCards();
+        const index = cards.findIndex(c => c.id === card.id);
+        if (index !== -1) {
             cards[index] = card;
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cards));
-        } catch (error) {
-            console.error('Failed to update card in localStorage:', error);
-            throw error;
+            this.saveAllCards(cards);
+        } else {
+            cards.push(card);
+            this.saveAllCards(cards);
         }
     },
 
-    /**
-     * Delete a card from localStorage by id.
-     * @param {string} id - card id
-     */
     deleteCard(id) {
+        const cards = this.getCards();
+        const filtered = cards.filter(c => c.id !== id);
+        this.saveAllCards(filtered);
+    },
+
+    saveAllCards(cards) {
+        this.cachedCards = cards;
         try {
-            const cards = this.getCards();
-            const filtered = cards.filter(c => c.id !== id);
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filtered));
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cards));
         } catch (error) {
-            console.error('Failed to delete card from localStorage:', error);
-            throw error;
+            console.error('Failed to save to localStorage:', error);
+        }
+
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.save_cards) {
+            try {
+                window.pywebview.api.save_cards(cards);
+            } catch (error) {
+                console.error('Failed to save to Python API:', error);
+            }
         }
     }
 };

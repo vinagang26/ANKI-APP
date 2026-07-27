@@ -10,12 +10,14 @@ const app = {
 
     /**
      * Initialize app on page load.
-     * Load cards from storage and render home screen.
+     * Load cards from persistent storage (JSON file / localStorage) and render home screen.
      */
-    init() {
-        const rawCards = storage.getCards();
+    async init() {
+        if (window.pywebview && !window.pywebview.api) {
+            await new Promise(resolve => window.addEventListener('pywebviewready', resolve));
+        }
+        const rawCards = await storage.loadCards();
         this.cards = rawCards.map(c => scheduler.initCard(c));
-        // Persist normalized cards if needed
         this.cards.forEach(c => storage.updateCard(c));
         this.showScreen('home');
     },
