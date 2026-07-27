@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Vocab App</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="utils.js" defer></script>
+    <script src="storage.js" defer></script>
+    <script src="scheduler.js" defer></script>
+    <script src="ui.js" defer></script>
+    <script src="app.js" defer></script>
+    <script src="iridescence.js" defer></script>
+</head>
+<body>
+    <div id="iridescence-bg"></div>
+    <div id="app">
+        <!-- Home screen -->
+        <div id="screen-home" class="screen">
+            <div class="container">
+                <h1>Chinese Vocab</h1>
+                <div id="home-content"></div>
+            </div>
+        </div>
+
+        <!-- Library screen -->
+        <div id="screen-library" class="screen hidden">
+            <div class="container">
+                <h1>Vocabulary Library</h1>
+                <div id="library-content"></div>
+            </div>
+        </div>
+
+        <!-- Card form (create/edit) -->
+        <div id="screen-form" class="screen hidden">
+            <div class="container">
+                <h1 id="form-title">New Card</h1>
+                <form id="card-form"></form>
+            </div>
+        </div>
+
+        <!-- Review screen -->
+        <div id="screen-review" class="screen hidden">
+            <div class="container">
+                <h1>Review</h1>
+                <div id="review-content"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
