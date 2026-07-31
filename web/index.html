@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chinese Vocab App</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="utils.js" defer></script>
-    <script src="storage.js" defer></script>
-    <script src="scheduler.js" defer></script>
-    <script src="ui.js" defer></script>
-    <script src="app.js" defer></script>
-    <script src="iridescence.js" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20260730b">
+    <script src="utils.js?v=20260730b" defer></script>
+    <script src="storage.js?v=20260730b" defer></script>
+    <script src="scheduler.js?v=20260730b" defer></script>
+    <script src="ui.js?v=20260730b" defer></script>
+    <script src="deck-portability.js?v=20260730b" defer></script>
+    <script src="app.js?v=20260730b" defer></script>
+    <script src="iridescence.js?v=20260730b" defer></script>
 </head>
 <body>
     <div id="iridescence-bg"></div>
@@ -31,7 +32,7 @@
             </div>
         </div>
 
-        <!-- Card form (create/edit) -->
+        <!-- Card form (fallback container) -->
         <div id="screen-form" class="screen hidden">
             <div class="container">
                 <h1 id="form-title">New Card</h1>
@@ -45,6 +46,84 @@
                 <h1>Review</h1>
                 <div id="review-content"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Deck Modal (Create / Edit Deck Popup Dialog) -->
+    <div id="deck-modal" class="glass-modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div class="glass-modal" style="position: relative; width: 90%; max-width: 460px; margin: auto;">
+            <h2 id="deck-modal-title">Create New Deck</h2>
+            <div class="form-group">
+                <label for="deck-name-input">Deck Name *</label>
+                <input type="text" id="deck-name-input" class="glass-input" placeholder="e.g. HSK 1 Vocabulary">
+            </div>
+            <div class="form-group">
+                <label for="deck-desc-input">Description</label>
+                <input type="text" id="deck-desc-input" class="glass-input" placeholder="e.g. Beginner vocabulary">
+            </div>
+            <div class="form-group">
+                <label for="deck-author-input">Author</label>
+                <input type="text" id="deck-author-input" class="glass-input" placeholder="Author name">
+            </div>
+            <div class="form-group">
+                <label for="deck-lang-input">Language</label>
+                <input type="text" id="deck-lang-input" class="glass-input" placeholder="zh-CN">
+            </div>
+            <div class="button-group vertical deck-modal-actions">
+                <button type="button" id="btn-import-deck-modal" class="btn btn-secondary btn-pill">Import Deck</button>
+            </div>
+            <div class="button-group vertical">
+                <button type="button" id="btn-save-deck-modal" class="btn btn-primary btn-pill">Save Deck</button>
+                <button type="button" id="btn-cancel-deck-modal" class="btn btn-secondary btn-pill">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Conflict Modal -->
+    <div id="import-conflict-modal" class="glass-modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div class="glass-modal" style="position: relative; width: 90%; max-width: 520px; margin: auto;">
+            <h2 id="import-conflict-title">Import Deck</h2>
+            <div id="import-conflict-summary" style="margin-bottom: 12px; white-space: pre-line;"></div>
+            <div id="import-conflict-details" style="margin-bottom: 16px;"></div>
+            <div id="import-conflict-actions" class="button-group vertical"></div>
+        </div>
+    </div>
+
+    <!-- Card Modal (New Card / Edit Card Popup Dialog) -->
+    <div id="card-modal" class="glass-modal-overlay hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div class="glass-modal" style="position: relative; width: 90%; max-width: 460px; margin: auto;">
+            <h2 id="card-modal-title">New Card</h2>
+            <form id="card-modal-form" onsubmit="return false;">
+                <div id="card-modal-deck-group" class="form-group">
+                    <label for="input-deck-id">Deck</label>
+                    <select id="input-deck-id" class="glass-select"></select>
+                </div>
+                <div class="form-group">
+                    <label for="input-hanzi">Hanzi *</label>
+                    <div class="input-with-indicator">
+                        <input type="text" id="input-hanzi" class="glass-input" placeholder="e.g., 学习" required>
+                        <div id="auto-fill-indicator" class="auto-fill-indicator hidden">
+                            <span class="spinner"></span> Filling...
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="input-pinyin">Pinyin *</label>
+                    <input type="text" id="input-pinyin" class="glass-input" placeholder="e.g., xuéxí" required>
+                </div>
+                <div class="form-group">
+                    <label for="input-meaning">Meaning *</label>
+                    <input type="text" id="input-meaning" class="glass-input" placeholder="e.g., to study" required>
+                </div>
+                <div class="form-group">
+                    <label for="input-example">Example Sentence</label>
+                    <input type="text" id="input-example" class="glass-input" placeholder="(optional)">
+                </div>
+                <div class="button-group vertical">
+                    <button type="button" id="btn-form-save" class="btn btn-primary btn-pill">Save Card</button>
+                    <button type="button" id="btn-form-cancel" class="btn btn-secondary btn-pill">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 </body>

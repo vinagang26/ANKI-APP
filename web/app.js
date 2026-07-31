@@ -1,32 +1,63 @@
 const app = {
     // State
-    cards: [],
+    library: { decks: [], cards: {} },
+    progress: {},
+    activeDeckId: null,
     currentScreen: 'home',
+    previousScreen: null,
     currentReviewCard: null,
     reviewCardRevealed: false,
     autoFillTimeout: null,
     reviewQueue: [],
     reviewMode: 'due', // 'due', 'practice', or 'single'
+    currentReviewDeckId: null,
+    librarySortMode: 'recently-added',
+    librarySearchQuery: '',
+    librarySearchCursor: 0,
 
     /**
      * Initialize app on page load.
-     * Load cards from persistent storage (JSON file / localStorage) and render home screen.
+     * Load library and progress, setup initial deck.
      */
     async init() {
         if (window.pywebview && !window.pywebview.api) {
             await new Promise(resolve => window.addEventListener('pywebviewready', resolve));
         }
-        const rawCards = await storage.loadCards();
-        this.cards = rawCards.map(c => scheduler.initCard(c));
-        this.cards.forEach(c => storage.updateCard(c));
+        const data = await storage.loadLibrary();
+        this.library = data.library;
+        this.progress = data.progress;
+
+        if (this.library.decks && this.library.decks.length > 0) {
+            this.activeDeckId = this.library.decks[0].id;
+        }
+
         this.showScreen('home');
     },
 
     /**
-     * Switch to a screen and render it.
-     * @param {string} screenName - "home", "library", "form", "review"
+     * Get combined card list for specified deck (or all cards if deckId is null).
+     */
+    getCombinedCards(deckId = null) {
+        const cardsMap = this.library.cards || {};
+        const cardIds = deckId 
+            ? (this.library.decks.find(d => d.id === deckId) || {}).cardIds || []
+            : Object.keys(cardsMap);
+
+        return cardIds.map(id => {
+            const cardContent = cardsMap[id];
+            if (!cardContent) return null;
+            const prog = this.progress[id] || {};
+            return scheduler.initCard({ ...cardContent, ...prog });
+        }).filter(Boolean);
+    },
+
+    /**
+     * Switch screen and re-render.
      */
     showScreen(screenName) {
+        if (this.currentScreen && this.currentScreen !== screenName) {
+            this.previousScreen = this.currentScreen;
+        }
         this.currentScreen = screenName;
         this.reviewCardRevealed = false;
 
@@ -37,11 +68,11 @@ const app = {
                 break;
             case 'library':
                 ui.showScreen('library');
-                ui.renderLibrary(this.cards);
+                ui.renderLibrary(this.library, this.progress, this.activeDeckId);
                 break;
             case 'form':
                 ui.showScreen('form');
-                ui.renderForm(null);
+                ui.renderForm(null, this.library.decks, this.activeDeckId);
                 break;
             case 'review':
                 ui.showScreen('review');
@@ -51,64 +82,97 @@ const app = {
         }
     },
 
-    /**
-     * Render home screen with card counts breakdown (New, Learning, Review).
-     */
+    cancelForm() {
+        const target = this.previousScreen || 'home';
+        this.showScreen(target);
+    },
+
+    exitReview() {
+        this.reviewQueue = [];
+        this.currentReviewCard = null;
+        this.currentReviewDeckId = null;
+        const target = this.previousScreen || 'home';
+        this.showScreen(target);
+    },
+
+    switchDeck(deckId) {
+        this.activeDeckId = deckId;
+        if (this.currentScreen === 'library') {
+            ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+        }
+    },
+
+    setLibrarySortMode(mode) {
+        this.librarySortMode = mode;
+        if (this.currentScreen === 'library') {
+            ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+        }
+    },
+
+    setLibrarySearchQuery(query) {
+        this.librarySearchQuery = query || '';
+        this.librarySearchCursor = this.librarySearchQuery.length;
+        if (this.currentScreen === 'library') {
+            ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+        }
+    },
+
+    recordDeckOpen(deckId) {
+        if (!deckId) return;
+        const deck = this.library.decks.find(d => d.id === deckId);
+        if (!deck) return;
+        deck.lastOpenedAt = Date.now();
+        storage.updateDeck(deckId, { lastOpenedAt: deck.lastOpenedAt });
+        this.library = storage.getLibrary();
+    },
+
     renderHome() {
         const counts = this.getCardCounts();
         ui.renderHome(counts);
     },
 
-    /**
-     * Get statistics breakdown for cards.
-     */
     getCardCounts() {
         const now = Date.now();
         const endOfToday = utils.todayTimestamp() + 86400 * 1000;
+        const cards = this.getCombinedCards();
 
         let newCount = 0;
         let learningCount = 0;
         let dueReviewCount = 0;
 
-        this.cards.forEach(card => {
-            const normalized = scheduler.initCard(card);
-            if (normalized.state === 'new') {
+        cards.forEach(card => {
+            if (card.state === 'new') {
                 newCount++;
-            } else if (normalized.state === 'learning' || normalized.state === 'relearning') {
-                if (normalized.nextReviewAt <= now + 24 * 60 * 60 * 1000) {
+            } else if (card.state === 'learning' || card.state === 'relearning') {
+                if (card.nextReviewAt <= now + 24 * 60 * 60 * 1000) {
                     learningCount++;
                 }
-            } else if (normalized.state === 'review') {
-                if (normalized.nextReviewAt <= endOfToday) {
+            } else if (card.state === 'review') {
+                if (card.nextReviewAt <= endOfToday) {
                     dueReviewCount++;
                 }
             }
         });
 
-        const totalDue = newCount + learningCount + dueReviewCount;
-
         return {
-            total: this.cards.length,
+            total: cards.length,
             newCards: newCount,
             learningCards: learningCount,
             reviewCards: dueReviewCount,
-            totalDue: totalDue
+            totalDue: newCount + learningCount + dueReviewCount
         };
     },
 
-    /**
-     * Get array of cards that are due for review (ordered: Learning -> New -> Review).
-     */
-    getDueCards() {
+    getDueCards(deckId = null) {
         const now = Date.now();
         const endOfToday = utils.todayTimestamp() + 86400 * 1000;
+        const cards = this.getCombinedCards(deckId);
 
         const learning = [];
         const newCards = [];
         const review = [];
 
-        this.cards.forEach(card => {
-            const c = scheduler.initCard(card);
+        cards.forEach(c => {
             if (c.state === 'learning' || c.state === 'relearning') {
                 if (c.nextReviewAt <= now + 24 * 60 * 60 * 1000) {
                     learning.push(c);
@@ -125,124 +189,162 @@ const app = {
         return [...learning, ...newCards, ...review];
     },
 
-    /**
-     * Create a new card from form data.
-     * @param {object} formData - { hanzi, pinyin, meaning, exampleSentence }
-     */
-    createCard(formData) {
-        const validation = utils.validateCard(formData);
-        if (!validation.valid) {
-            alert('Validation errors:\n' + validation.errors.join('\n'));
-            return;
-        }
+    // --- Deck Handlers ---
 
-        const now = Date.now();
-        const newCard = scheduler.initCard({
-            id: utils.generateId(),
-            hanzi: formData.hanzi,
-            pinyin: formData.pinyin,
-            meaning: formData.meaning,
-            exampleSentence: formData.exampleSentence || null,
-            createdAt: now,
-            lastReviewedAt: null,
-            nextReviewAt: now, // Due immediately as New card
-            state: 'new',
-            step: 0,
-            interval: 0,
-            easeFactor: scheduler.DEFAULT_EASE,
-            repetition: 0,
-            lapses: 0,
-            reviewCount: 0
-        });
-
-        storage.saveCard(newCard);
-        this.cards.push(newCard);
-        this.showScreen('home');
+    createDeck({ name, author, description, language }) {
+        const newDeck = storage.createDeck({ name, author, description, language });
+        this.library = storage.getLibrary();
+        this.activeDeckId = newDeck.id;
+        ui.renderLibrary(this.library, this.progress, this.activeDeckId);
     },
 
-    /**
-     * Start editing a card.
-     */
-    editCardStart(cardId) {
-        const card = utils.findCardById(this.cards, cardId);
-        if (!card) {
-            console.error(`Card ${cardId} not found`);
-            return;
-        }
-
-        this.currentEditCardId = cardId;
-        ui.showScreen('form');
-        ui.renderForm(card);
+    updateDeck(deckId, updates) {
+        storage.updateDeck(deckId, updates);
+        this.library = storage.getLibrary();
+        ui.renderLibrary(this.library, this.progress, this.activeDeckId);
     },
 
-    /**
-     * Save an edited card.
-     */
-    saveCard(formData, cardId) {
-        const validation = utils.validateCard(formData);
-        if (!validation.valid) {
-            alert('Validation errors:\n' + validation.errors.join('\n'));
-            return;
-        }
+    deleteDeck(deckId) {
+        const deck = this.library.decks.find(d => d.id === deckId);
+        if (!deck) return;
 
-        if (cardId) {
-            const card = utils.findCardById(this.cards, cardId);
-            if (!card) {
-                console.error(`Card ${cardId} not found`);
-                return;
+        if (confirm(`Are you sure you want to delete deck "${deck.name}" and all its cards?`)) {
+            try {
+                storage.deleteDeck(deckId);
+                this.library = storage.getLibrary();
+                this.progress = storage.getProgress();
+                if (this.library.decks.length > 0) {
+                    this.activeDeckId = this.library.decks[0].id;
+                }
+                ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+            } catch (err) {
+                alert(err.message);
             }
+        }
+    },
 
-            card.hanzi = formData.hanzi;
-            card.pinyin = formData.pinyin;
-            card.meaning = formData.meaning;
-            card.exampleSentence = formData.exampleSentence || null;
+    moveCard(cardId, targetDeckId) {
+        const success = storage.moveCard(cardId, targetDeckId);
+        if (success) {
+            this.library = storage.getLibrary();
+            ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+        }
+    },
 
-            storage.updateCard(card);
-        } else {
-            this.createCard(formData);
+    // --- Card Handlers ---
+
+    editCardStart(cardId) {
+        const cardContent = this.library.cards[cardId];
+        if (!cardContent) return;
+
+        ui.showCardModal(cardContent, this.library.decks, cardContent.deckId || this.activeDeckId);
+    },
+
+    saveCard(formData, cardId = null, targetDeckId = null) {
+        const validation = utils.validateCard(formData);
+        if (!validation.valid) {
+            alert('Validation errors:\n' + validation.errors.join('\n'));
             return;
         }
 
-        this.showScreen('home');
-    },
+        const resolvedDeckId = targetDeckId || this.activeDeckId || (this.library.decks[0] ? this.library.decks[0].id : null);
+        if (!resolvedDeckId) {
+            alert('Please create a deck before adding cards.');
+            return;
+        }
 
-    /**
-     * Reset card SRS progress back to 'new'.
-     */
-    resetCardProgress(cardId) {
-        const card = utils.findCardById(this.cards, cardId);
-        if (!card) return;
+        const cardData = { id: cardId, ...formData };
 
-        card.state = 'new';
-        card.step = 0;
-        card.interval = 0;
-        card.easeFactor = scheduler.DEFAULT_EASE;
-        card.repetition = 0;
-        card.lapses = 0;
-        card.nextReviewAt = Date.now();
+        storage.saveCard(cardData, resolvedDeckId);
+        this.library = storage.getLibrary();
+        this.progress = storage.getProgress();
 
-        storage.updateCard(card);
-        ui.renderLibrary(this.cards);
-    },
-
-    /**
-     * Delete a card by id.
-     */
-    deleteCard(cardId) {
-        const card = utils.findCardById(this.cards, cardId);
-        if (!card) return;
-
-        if (confirm(`Delete "${card.hanzi}"?`)) {
-            storage.deleteCard(cardId);
-            this.cards = this.cards.filter(c => c.id !== cardId);
-            ui.renderLibrary(this.cards);
+        if (this.currentScreen === 'library') {
+            ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+        } else if (this.currentScreen === 'home') {
+            this.renderHome();
+        } else {
+            this.showScreen('library');
         }
     },
 
-    /**
-     * Auto-fill Pinyin & Meaning from Hanzi using free Google Translate API.
-     */
-    async autoFillFromHanzi(hanzi) {
+    deleteCard(cardId) {
+        const cardContent = this.library.cards[cardId];
+        if (!cardContent) return;
+
+        if (confirm(`Delete card "${cardContent.hanzi}"?`)) {
+            storage.deleteCard(cardId);
+            this.library = storage.getLibrary();
+            this.progress = storage.getProgress();
+            ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+        }
+    },
+
+    exportCurrentDeck() {
+        const deck = this.library.decks.find(d => d.id === this.activeDeckId);
+        if (!deck) return;
+        window.deckPortability.exportDeckToFile(deck, this.library.cards, deck.name);
+    },
+
+    exportDeckById(deckId) {
+        const deck = this.library.decks.find(d => d.id === deckId);
+        if (!deck) return;
+        window.deckPortability.exportDeckToFile(deck, this.library.cards, deck.name);
+    },
+
+    async importDeck() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.onchange = async () => {
+            const [file] = input.files || [];
+            if (!file) return;
+
+            try {
+                const imported = await window.deckPortability.readPortableDeckFromFile(file);
+                const targetDeck = this.library.decks.find(d => d.id === this.activeDeckId);
+                const comparison = window.deckPortability.compareImportedDeck(imported.deck, targetDeck, this.library.cards);
+                const importResult = {
+                    importedDeck: imported.deck,
+                    targetDeck,
+                    comparison,
+                    summaryText: comparison.summaryText,
+                    hasExistingDeck: comparison.hasExistingDeck
+                };
+
+                if (comparison.hasExistingDeck) {
+                    ui.showImportConflictModal(importResult);
+                } else {
+                    this.handleImportResolution('update', importResult);
+                }
+            } catch (err) {
+                alert(err.message || 'Failed to import deck.');
+            }
+        };
+        input.click();
+    },
+
+    handleImportResolution(action, importResult) {
+        if (action === 'cancel') {
+            return;
+        }
+
+        const result = window.deckPortability.applyImportedDeck(this.library, importResult.importedDeck, action, importResult.targetDeck?.id);
+        if (!result) return;
+
+        storage.saveLibrary(this.library);
+        this.library = storage.getLibrary();
+        this.progress = storage.getProgress();
+        ui.renderLibrary(this.library, this.progress, this.activeDeckId);
+
+        if (result.newCardIds.length > 0) {
+            alert(`Imported deck complete. Added ${result.newCardIds.length} new card${result.newCardIds.length === 1 ? '' : 's'}.`);
+        } else {
+            alert('Imported deck complete.');
+        }
+    },
+
+    async autoFillFromHanzi(hanzi, pinyinTarget = null, meaningTarget = null) {
         const query = hanzi ? hanzi.trim() : '';
         if (!query) {
             ui.showAutoFillLoading(false);
@@ -274,14 +376,14 @@ const app = {
                 }
             }
 
-            const pinyinInput = document.getElementById('input-pinyin');
-            const meaningInput = document.getElementById('input-meaning');
+            const resolvedPinyinTarget = pinyinTarget || document.getElementById('input-pinyin');
+            const resolvedMeaningTarget = meaningTarget || document.getElementById('input-meaning');
 
-            if (pinyinInput && pinyin) {
-                pinyinInput.value = pinyin;
+            if (resolvedPinyinTarget && pinyin) {
+                resolvedPinyinTarget.value = pinyin;
             }
-            if (meaningInput && meaning) {
-                meaningInput.value = meaning;
+            if (resolvedMeaningTarget && meaning) {
+                resolvedMeaningTarget.value = meaning;
             }
 
             ui.showAutoFillLoading(false);
@@ -291,31 +393,31 @@ const app = {
         }
     },
 
-    triggerAutoFill(hanzi) {
+    triggerAutoFill(hanzi, pinyinTarget = null, meaningTarget = null) {
         clearTimeout(this.autoFillTimeout);
         this.autoFillTimeout = setTimeout(() => {
-            this.autoFillFromHanzi(hanzi);
+            this.autoFillFromHanzi(hanzi, pinyinTarget, meaningTarget);
         }, 400);
     },
 
-    /**
-     * Start a review or practice session.
-     * @param {string} mode - 'due' (SRS due cards), 'practice' (cram all cards), or 'single' (single card)
-     * @param {string|null} singleCardId 
-     */
-    startReview(mode = 'due', singleCardId = null) {
+    startReview(mode = 'due', singleCardId = null, deckId = null) {
         this.reviewMode = mode;
+        this.currentReviewDeckId = deckId || this.activeDeckId || this.currentReviewDeckId || null;
         this.showScreen('review');
 
+        if (this.currentReviewDeckId) {
+            this.recordDeckOpen(this.currentReviewDeckId);
+        }
+
         if (mode === 'single' && singleCardId) {
-            const card = utils.findCardById(this.cards, singleCardId);
+            const cardContent = this.library.cards[singleCardId];
+            const prog = this.progress[singleCardId] || {};
+            const card = cardContent ? scheduler.initCard({ ...cardContent, ...prog }) : null;
             this.reviewQueue = card ? [card] : [];
         } else if (mode === 'practice') {
-            // Practice/Cram mode - all cards
-            this.reviewQueue = [...this.cards];
+            this.reviewQueue = this.currentReviewDeckId ? this.getCombinedCards(this.currentReviewDeckId) : this.getCombinedCards();
         } else {
-            // Due mode - SRS due cards
-            this.reviewQueue = this.getDueCards();
+            this.reviewQueue = this.currentReviewDeckId ? this.getDueCards(this.currentReviewDeckId) : this.getDueCards();
         }
 
         if (this.reviewQueue.length === 0) {
@@ -329,9 +431,6 @@ const app = {
         ui.renderReview(this.reviewQueue.length, 1, this.currentReviewCard, false);
     },
 
-    /**
-     * Reveal current review card.
-     */
     revealCard() {
         if (!this.currentReviewCard) return;
         this.reviewCardRevealed = true;
@@ -339,42 +438,36 @@ const app = {
         ui.renderReview(this.reviewQueue.length, currentPos, this.currentReviewCard, true);
     },
 
-    /**
-     * Submit user rating ("Again", "Hard", "Good", "Easy").
-     */
     submitRating(cardId, rating) {
-        const cardIndex = this.cards.findIndex(c => c.id === cardId);
-        if (cardIndex === -1) return;
+        const cardContent = this.library.cards[cardId];
+        if (!cardContent) return;
 
-        const currentCard = this.cards[cardIndex];
+        const prog = this.progress[cardId] || {};
+        const currentCard = scheduler.initCard({ ...cardContent, ...prog });
 
-        // Process review through Anki algorithm
         const updatedCard = scheduler.processReview(currentCard, rating);
         updatedCard.reviewCount = (updatedCard.reviewCount || 0) + 1;
 
-        // Update state in memory & storage
-        this.cards[cardIndex] = updatedCard;
-        storage.updateCard(updatedCard);
+        // Save progress separately
+        const { id, deckId, hanzi, pinyin, meaning, exampleSentence, ...progressFields } = updatedCard;
+        storage.updateCardProgress(cardId, progressFields);
+        this.progress[cardId] = progressFields;
 
-        // Queue logic:
-        // Remove current card from queue position
+        // Queue logic
         const queueIdx = this.reviewQueue.findIndex(c => c.id === cardId);
         if (queueIdx !== -1) {
             this.reviewQueue.splice(queueIdx, 1);
         }
 
-        // If card was rated 'Again' or is still in 'learning'/'relearning' state, requeue it at the end of the session!
         if (updatedCard.state === 'learning' || updatedCard.state === 'relearning' || rating === 'Again') {
             this.reviewQueue.push(updatedCard);
         }
 
-        // Show next card in queue
         if (this.reviewQueue.length > 0) {
             this.currentReviewCard = this.reviewQueue[0];
             this.reviewCardRevealed = false;
             ui.renderReview(this.reviewQueue.length, 1, this.currentReviewCard, false);
         } else {
-            // Queue completed!
             this.currentReviewCard = null;
             ui.renderReview(0, 0, null, false);
         }
