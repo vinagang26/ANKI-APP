@@ -1,0 +1,472 @@
+﻿/* Library */
+.library-shell {
+    width: 100%;
+}
+
+.library-back-row {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 10px;
+}
+
+.library-back-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.library-back-button:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.32);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+}
+
+.library-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.library-search-wrap {
+    flex: 1;
+}
+
+.library-search {
+    width: min(100%, 760px);
+    height: 52px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+    font-size: 18px;
+    padding: 0 24px;
+    outline: none;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.library-search::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.library-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.library-filter-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 0 2px;
+}
+
+.filter-pill {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 9999px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-pill:hover,
+.filter-pill.active {
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 28px 22px;
+    align-items: start;
+}
+
+.deck-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 270px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.deck-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.28);
+}
+
+.deck-card.active {
+    border-color: rgba(96, 165, 250, 0.8);
+    box-shadow: 0 16px 32px rgba(59, 130, 246, 0.18);
+}
+
+.deck-card-media {
+    position: relative;
+    height: 225px;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 14px;
+}
+
+.deck-card-media-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.12) 40%, transparent 100%);
+}
+
+.deck-card-duration {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.72);
+    color: white;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 5px 8px;
+    text-transform: uppercase;
+}
+
+.deck-menu-button {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.45);
+    color: white;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.deck-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 16px 14px;
+}
+
+.deck-card-body h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.3;
+}
+
+.deck-card-meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.deck-card-description {
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.76);
+    min-height: 40px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.deck-card-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.deck-train-btn {
+    background: rgba(14, 165, 233, 0.9);
+    color: white;
+    border: none;
+    padding: 9px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.deck-card-stats {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.library-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.library-empty h3 {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.library-empty p {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.deck-menu-popover {
+    position: absolute;
+    top: 42px;
+    right: 6px;
+    z-index: 20;
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    width: 170px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.38);
+}
+
+.deck-menu-popover .menu-option {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: white;
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.deck-menu-popover .menu-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.deck-menu-popover .menu-option.danger {
+    color: #fca5a5;
+}
+
+.deck-manager-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.68) !important;
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+    z-index: 99999 !important;
+}
+
+.deck-manager-dialog {
+    max-width: 620px;
+    width: min(88vw, 620px);
+    max-height: 82vh;
+    overflow: auto;
+    padding: 22px 18px 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.46), inset 0 1px 2px rgba(255, 255, 255, 0.2) !important;
+    margin: auto !important;
+}
+
+.deck-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.deck-manager-header h2 {
+    margin: 0;
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.deck-manager-close {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.deck-manager-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 52vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.deck-manager-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1.2fr) minmax(120px, 1fr) minmax(180px, 1.8fr) 44px;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px 8px 12px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.22);
+}
+
+.deck-manager-input {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    padding: 10px 12px;
+    font-size: 15px;
+    outline: none;
+    text-align: left;
+}
+
+.deck-manager-input::placeholder {
+    color: rgba(255, 255, 255, 0.52);
+}
+
+.deck-manager-input:focus {
+    border-color: rgba(125, 211, 252, 0.9);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.deck-manager-more {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    justify-self: end;
+}
+
+.deck-manager-empty {
+    text-align: center;
+    padding: 24px 18px;
+    border-radius: 16px;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.deck-manager-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.btn-pill {
+    border-radius: 9999px;
+    width: 100%;
+    font-weight: 700;
+}
+
+.card-list {
+    list-style: none;
+    margin-bottom: 20px;
+}
+
+.card-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.card-item:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.card-info {
+    flex: 1;
+}
+
+.card-info strong {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 4px;
+    color: #ffffff;
+}
+
+.card-info .pinyin {
+    color: #38bdf8;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.card-meaning {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 5px 0;
+}
+
+.card-next-review {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 5px 0;
+}
+
+.card-actions {
+    white-space: nowrap;
+    margin-left: 15px;
+}
+
