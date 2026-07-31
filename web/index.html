@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Vocab App</title>
+    <meta name="description" content="Chinese vocabulary flashcard app with spaced repetition (Anki-style SM-2 algorithm).">
+
+    <!-- Styles: split by concern -->
+    <link rel="stylesheet" href="styles/base.css?v=20260801">
+    <link rel="stylesheet" href="styles/buttons.css?v=20260801">
+    <link rel="stylesheet" href="styles/forms.css?v=20260801">
+    <link rel="stylesheet" href="styles/library.css?v=20260801">
+    <link rel="stylesheet" href="styles/review.css?v=20260801">
+    <link rel="stylesheet" href="styles/modals.css?v=20260801">
+    <link rel="stylesheet" href="styles/responsive.css?v=20260801">
+
+    <!--
+        Script load order is significant — later files depend on earlier globals:
+        1. utils/helpers.js   → exposes `utils`
+        2. services/*         → exposes `storage`, `window.deckPortability`
+        3. core/scheduler.js  → exposes `scheduler`
+        4. ui.js              → defines `const ui = {}`  ← coordinator, must come before pages/components
+        5. pages/*            → attach renderers onto `ui`
+        6. components/*       → attach component methods onto `ui`
+        7. core/app.js        → exposes `app`, depends on everything above
+        8. utils/iridescence  → self-contained canvas effect, runs last
+    -->
+    <script src="utils/helpers.js?v=20260801" defer></script>
+    <script src="services/storage.js?v=20260801" defer></script>
+    <script src="services/deck-portability.js?v=20260801" defer></script>
+    <script src="core/scheduler.js?v=20260801" defer></script>
+    <script src="ui.js?v=20260801" defer></script>
+    <script src="pages/home.js?v=20260801" defer></script>
+    <script src="pages/library.js?v=20260801" defer></script>
+    <script src="components/deck-manager.js?v=20260801" defer></script>
+    <script src="components/card-modal.js?v=20260801" defer></script>
+    <script src="components/import-modal.js?v=20260801" defer></script>
+    <script src="components/review.js?v=20260801" defer></script>
+    <script src="core/app.js?v=20260801" defer></script>
+    <script src="utils/iridescence.js?v=20260801" defer></script>
+</head>
+<body>
+    <div id="iridescence-bg"></div>
+    <div id="app">
+        <!-- Home screen -->
+        <div id="screen-home" class="screen">
+            <div class="container">
+                <h1>Chinese Vocab</h1>
+                <div id="home-content"></div>
+            </div>
+        </div>
+
+        <!-- Library screen -->
+        <div id="screen-library" class="screen hidden">
+            <div class="container">
+                <h1>Vocabulary Library</h1>
+                <div id="library-content"></div>
+            </div>
+        </div>
+
+        <!-- Card form (fallback container) -->
+        <div id="screen-form" class="screen hidden">
+            <div class="container">
+                <h1 id="form-title">New Card</h1>
+                <form id="card-form"></form>
+            </div>
+        </div>
+
+        <!-- Review screen -->
+        <div id="screen-review" class="screen hidden">
+            <div class="container">
+                <h1>Review</h1>
+                <div id="review-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deck Modal (Create / Edit Deck Popup Dialog) -->
+    <div id="deck-modal" class="glass-modal-overlay hidden">
+        <div class="glass-modal">
+            <h2 id="deck-modal-title">Create New Deck</h2>
+            <div class="form-group">
+                <label for="deck-name-input">Deck Name *</label>
+                <input type="text" id="deck-name-input" class="glass-input" placeholder="e.g. HSK 1 Vocabulary">
+            </div>
+            <div class="form-group">
+                <label for="deck-desc-input">Description</label>
+                <input type="text" id="deck-desc-input" class="glass-input" placeholder="e.g. Beginner vocabulary">
+            </div>
+            <div class="form-group">
+                <label for="deck-author-input">Author</label>
+                <input type="text" id="deck-author-input" class="glass-input" placeholder="Author name">
+            </div>
+            <div class="form-group">
+                <label for="deck-lang-input">Language</label>
+                <input type="text" id="deck-lang-input" class="glass-input" placeholder="zh-CN">
+            </div>
+            <div class="button-group vertical deck-modal-actions">
+                <button type="button" id="btn-import-deck-modal" class="btn btn-secondary btn-pill">Import Deck</button>
+            </div>
+            <div class="button-group vertical">
+                <button type="button" id="btn-save-deck-modal" class="btn btn-primary btn-pill">Save Deck</button>
+                <button type="button" id="btn-cancel-deck-modal" class="btn btn-secondary btn-pill">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Conflict Modal -->
+    <div id="import-conflict-modal" class="glass-modal-overlay hidden">
+        <div class="glass-modal">
+            <h2 id="import-conflict-title">Import Deck</h2>
+            <div id="import-conflict-summary" style="margin-bottom: 12px; white-space: pre-line;"></div>
+            <div id="import-conflict-details" style="margin-bottom: 16px;"></div>
+            <div id="import-conflict-actions" class="button-group vertical"></div>
+        </div>
+    </div>
+
+    <!-- Card Modal (populated at runtime by ui.showCardModal) -->
+    <div id="card-modal" class="glass-modal-overlay hidden">
+        <div class="glass-modal"></div>
+    </div>
+</body>
+</html>
