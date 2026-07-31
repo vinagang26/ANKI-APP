@@ -1,4 +1,4 @@
-const ui = {
+﻿const ui = {
     /**
      * Show a screen by ID, hide all others.
      * @param {string} screenName - "home", "library", "form", "review"
@@ -401,8 +401,10 @@ const ui = {
             closeButton.onclick = () => modal.remove();
         }
 
+        let _mdOverlay1 = false;
+        modal.addEventListener('mousedown', (e) => { _mdOverlay1 = e.target === modal; });
         modal.onclick = (e) => {
-            if (e.target === modal) modal.remove();
+            if (e.target === modal && _mdOverlay1) modal.remove();
         };
 
         const listEl = document.getElementById('deck-manager-list');
@@ -572,8 +574,10 @@ const ui = {
 
         modal.classList.remove('hidden');
 
+        let _mdOverlay2 = false;
+        modal.addEventListener('mousedown', (e) => { _mdOverlay2 = e.target === modal; });
         modal.onclick = (e) => {
-            if (e.target === modal) {
+            if (e.target === modal && _mdOverlay2) {
                 modal.classList.add('hidden');
             }
         };
@@ -655,8 +659,10 @@ const ui = {
 
         modal.classList.remove('hidden');
 
+        let _mdOverlay3 = false;
+        modal.addEventListener('mousedown', (e) => { _mdOverlay3 = e.target === modal; });
         modal.onclick = (e) => {
-            if (e.target === modal) {
+            if (e.target === modal && _mdOverlay3) {
                 modal.classList.add('hidden');
             }
         };
@@ -736,7 +742,12 @@ const ui = {
             row.className = 'deck-manager-row card-edit-row';
             row.dataset.rowIndex = String(listEl.children.length);
             row.innerHTML = buildRow({ hanzi: '', pinyin: '', meaning: '' }, listEl.children.length);
-            listEl.appendChild(row.firstElementChild);
+            const newRowEl = row.firstElementChild;
+            listEl.appendChild(newRowEl);
+            const newHanzi = newRowEl.querySelector('[data-field="hanzi"]');
+            const newPinyin = newRowEl.querySelector('[data-field="pinyin"]');
+            const newMeaning = newRowEl.querySelector('[data-field="meaning"]');
+            handleRowAutoFill(newHanzi, newPinyin, newMeaning);
         };
 
         document.getElementById('deck-manager-add-card').onclick = () => addRow();
@@ -815,8 +826,10 @@ const ui = {
         }
 
         modal.classList.remove('hidden');
+        let _mdOverlay4 = false;
+        modal.addEventListener('mousedown', (e) => { _mdOverlay4 = e.target === modal; });
         modal.onclick = (e) => {
-            if (e.target === modal) {
+            if (e.target === modal && _mdOverlay4) {
                 modal.classList.add('hidden');
                 if (app.currentScreen === 'form') {
                     app.cancelForm();
