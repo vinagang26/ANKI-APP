@@ -9,7 +9,7 @@ if (Test-Path $AppExe) {
     $WshShell = New-Object -ComObject WScript.Shell
     $ShortcutPath = Join-Path $Desktop "Chinese Flashcards.lnk"
     $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
-    $Shortcut.TargetPath = $AppExe
+    $Shortcut.TargetPath = "$AppExe"
     $Shortcut.WorkingDirectory = (Join-Path $PSScriptRoot "dist")
     $Shortcut.Description = "Chinese Vocab Liquid Glass Anki Desktop App"
     $Shortcut.Save()

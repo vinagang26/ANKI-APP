@@ -110,6 +110,8 @@ ui.showDeckManager = function(deck) {
             if (isNew) {
                 const saved = storage.saveCard({ ...formData }, deckRef.id);
                 if (saved) {
+                    app.library = storage.getLibrary();
+                    app.progress = storage.getProgress();
                     rowEl.dataset.rowMode = 'existing';
                     rowEl.dataset.cardId = saved.id;
                     rowEl.querySelectorAll('.deck-manager-input').forEach(input => {
@@ -121,7 +123,9 @@ ui.showDeckManager = function(deck) {
             } else {
                 const existingCard = app.library.cards[cardId];
                 if (existingCard) {
-                    app.saveCard({ ...existingCard, ...formData }, existingCard.id, deckRef.id);
+                    app.saveCard({ ...formData, id: existingCard.id }, existingCard.id, deckRef.id);
+                    app.library = storage.getLibrary();
+                    app.progress = storage.getProgress();
                 }
             }
         };
@@ -201,14 +205,60 @@ ui.showDeckManager = function(deck) {
         if (emptyMessage) emptyMessage.remove();
 
         attachDeckManagerRowHandlers(row, deck, modal);
+
+        const newHanziInput = row.querySelector('[data-field="hanzi"]');
+        if (newHanziInput) {
+            newHanziInput.focus();
+            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    };
+
+    const saveAllRows = () => {
+        const rows = listEl.querySelectorAll('.deck-manager-row');
+        rows.forEach(rowEl => {
+            const cardId = rowEl.dataset.cardId || null;
+            const isNew = rowEl.dataset.rowMode === 'new';
+            const inputs = rowEl.querySelectorAll('.deck-manager-input');
+            const values = {};
+            inputs.forEach(input => {
+                const field = input.dataset.field;
+                values[field] = (input.value || '').trim();
+            });
+
+            if (!values.hanzi && !values.pinyin && !values.meaning) {
+                return;
+            }
+
+            const formData = {
+                hanzi: values.hanzi || '',
+                pinyin: values.pinyin || '',
+                meaning: values.meaning || '',
+                exampleSentence: ''
+            };
+
+            if (isNew) {
+                storage.saveCard({ ...formData }, deck.id);
+            } else {
+                const existingCard = app.library.cards[cardId];
+                if (existingCard) {
+                    app.saveCard({ ...formData, id: existingCard.id }, existingCard.id, deck.id);
+                }
+            }
+        });
+        app.commit();
     };
 
     const addCardButton = document.getElementById('deck-manager-add-card');
     if (addCardButton) {
-        addCardButton.onclick = () => addBlankRow();
+        addCardButton.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            addBlankRow();
+        };
     }
 
     document.getElementById('deck-manager-save').addEventListener('click', () => {
+        saveAllRows();
         modal.remove();
     });
 

@@ -132,7 +132,14 @@ ui.showCardModal = function(card = null, decks = [], selectedDeckId = '') {
                 app.saveCard(formData, card ? card.id : null, targetDeckId);
             });
 
+            // Re-sync local library state so subsequent card adds pick up existing items correctly
+            app.library = storage.getLibrary();
+            app.progress = storage.getProgress();
+
             modal.classList.add('hidden');
+            if (app.currentScreen === 'library') {
+                app.commit();
+            }
         };
     }
 

@@ -1,4 +1,4 @@
-﻿const app = {
+const app = {
     // State
     library: { decks: [], cards: {} },
     progress: {},
@@ -88,11 +88,17 @@
     },
 
     exitReview() {
+        const deckId = this.currentReviewDeckId;
         this.reviewQueue = [];
         this.currentReviewCard = null;
         this.currentReviewDeckId = null;
-        const target = this.previousScreen || 'home';
-        this.showScreen(target);
+        if (deckId) {
+            this.activeDeckId = deckId;
+            this.showScreen('library');
+        } else {
+            const target = this.previousScreen || 'library';
+            this.showScreen(target);
+        }
     },
 
     switchDeck(deckId) {

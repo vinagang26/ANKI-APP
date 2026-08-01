@@ -15,13 +15,14 @@ class StorageApi:
 
     def load_cards(self):
         if not os.path.exists(self.data_file):
-            return []
+            return {}
         try:
             with open(self.data_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                data = json.load(f)
+                return data if data is not None else {}
         except Exception as e:
             print("Error loading cards from file:", e)
-            return []
+            return {}
 
     def save_cards(self, cards):
         try:
@@ -33,6 +34,21 @@ class StorageApi:
             return False
 
 def resolve_web_dir(base_dir):
+    # If running as PyInstaller executable, check live project directory & working directory first
+    if getattr(sys, 'frozen', False):
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        cwd_dir = os.getcwd()
+        
+        candidates = [
+            os.path.join(cwd_dir, 'web'),
+            os.path.join(exe_dir, 'web'),
+            os.path.join(os.path.dirname(exe_dir), 'web')
+        ]
+        
+        for candidate in candidates:
+            if os.path.exists(os.path.join(candidate, 'index.html')):
+                return candidate
+
     web_dir = os.path.join(base_dir, 'web')
     if os.path.exists(os.path.join(web_dir, 'index.html')):
         return web_dir

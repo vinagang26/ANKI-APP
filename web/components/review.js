@@ -25,7 +25,7 @@ ui.renderReview = function(remainingCount, currentPos, currentCard = null, revea
             </div>
         `;
         document.getElementById('btn-review-home').addEventListener('click', () => {
-            app.showScreen('library');
+            app.exitReview();
         });
         document.getElementById('btn-practice-again').addEventListener('click', () => {
             app.startReview('practice', null, app.currentReviewDeckId || app.activeDeckId || null);

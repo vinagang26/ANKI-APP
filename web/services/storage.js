@@ -1,4 +1,4 @@
-﻿const storage = {
+const storage = {
     STORAGE_KEY_LEGACY: 'chinese-vocab-cards',
     STORAGE_KEY_LIBRARY: 'chinese-vocab-library-v2',
     STORAGE_KEY_PROGRESS: 'chinese-vocab-progress-v2',
@@ -14,13 +14,34 @@
         let libraryData = null;
         let progressData = null;
 
+        // Ensure pywebview object & api are fully initialized if running inside PyWebView desktop shell
+        if (!window.pywebview || !window.pywebview.api) {
+            await new Promise(resolve => {
+                if (window.pywebview && window.pywebview.api) {
+                    return resolve();
+                }
+                const handleReady = () => {
+                    window.removeEventListener('pywebviewready', handleReady);
+                    resolve();
+                };
+                window.addEventListener('pywebviewready', handleReady);
+                setTimeout(() => {
+                    window.removeEventListener('pywebviewready', handleReady);
+                    resolve();
+                }, 1000);
+            });
+        }
+
         // Try pywebview API first if available
         if (window.pywebview && window.pywebview.api && window.pywebview.api.load_cards) {
             try {
                 const pyData = await window.pywebview.api.load_cards();
-                if (pyData && typeof pyData === 'object' && !Array.isArray(pyData) && pyData.decks) {
-                    libraryData = pyData.library || pyData;
+                if (pyData && typeof pyData === 'object' && pyData.library && pyData.library.decks) {
+                    libraryData = pyData.library;
                     progressData = pyData.progress || {};
+                } else if (pyData && typeof pyData === 'object' && pyData.decks) {
+                    libraryData = pyData;
+                    progressData = {};
                 }
             } catch (e) {
                 console.error('Error loading library from Python API:', e);
@@ -69,6 +90,10 @@
 
         this.cachedLibrary = libraryData;
         this.cachedProgress = progressData;
+
+        // Ensure Python API stays in sync
+        this.syncToPython();
+
         return { library: this.cachedLibrary, progress: this.cachedProgress };
     },
 

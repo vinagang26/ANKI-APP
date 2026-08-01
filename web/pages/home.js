@@ -28,31 +28,13 @@ ui.renderHome = function(counts) {
             <p class="total-cards-info">Total cards in library: <strong>${counts.total}</strong></p>
         </div>
         <div class="button-group">
-            <button id="btn-review" class="btn btn-primary ${counts.totalDue === 0 ? 'disabled' : ''}">
+            <button id="btn-review" class="btn btn-primary disabled" disabled title="Review button disabled">
                 Start Due Review (${counts.totalDue})
-            </button>
-            <button id="btn-practice" class="btn ${counts.total === 0 ? 'disabled' : ''}">
-                Practice All Cards
             </button>
             <button id="btn-new-card" class="btn">New Card</button>
             <button id="btn-library" class="btn">Library</button>
         </div>
     `;
-
-    // Event listeners
-    const btnReview = document.getElementById('btn-review');
-    if (counts.totalDue > 0 && btnReview) {
-        btnReview.addEventListener('click', () => {
-            app.startReview('due');
-        });
-    }
-
-    const btnPractice = document.getElementById('btn-practice');
-    if (counts.total > 0 && btnPractice) {
-        btnPractice.addEventListener('click', () => {
-            app.startReview('practice');
-        });
-    }
 
     document.getElementById('btn-new-card').addEventListener('click', () => {
         app.showScreen('form');
