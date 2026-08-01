@@ -73,9 +73,40 @@ ui.showCardModal = function(card = null, decks = [], selectedDeckId = '') {
         };
     };
 
+    const bindRowActions = (row) => {
+        const hanziInput = row.querySelector('[data-field="hanzi"]');
+        const pinyinInput = row.querySelector('[data-field="pinyin"]');
+        const meaningInput = row.querySelector('[data-field="meaning"]');
+        handleRowAutoFill(hanziInput, pinyinInput, meaningInput);
+
+        const actionBtn = row.querySelector('[data-row-action="menu"]');
+        if (actionBtn) {
+            actionBtn.onclick = (e) => {
+                e.stopPropagation();
+                const existingPopover = document.querySelector('.deck-menu-popover');
+                if (existingPopover) existingPopover.remove();
+
+                const menu = document.createElement('div');
+                menu.className = 'deck-menu-popover';
+                menu.style.position = 'absolute';
+                menu.style.right = '10px';
+                menu.style.zIndex = '100000';
+                menu.innerHTML = `<button class="menu-option danger" data-menu-action="delete">Delete row</button>`;
+                row.appendChild(menu);
+
+                const deleteBtn = menu.querySelector('[data-menu-action="delete"]');
+                if (deleteBtn) {
+                    deleteBtn.onclick = (event) => {
+                        event.stopPropagation();
+                        menu.remove();
+                        row.remove();
+                    };
+                }
+            };
+        }
+    };
+
     const addRow = () => {
-        // buildRow() returns the inner row's outer wrapper. Wrap in a div with a unique
-        // data-row-index and append that wrapper directly — don't double-wrap.
         const rowIndex = listEl.children.length;
         const wrapper = document.createElement('div');
         wrapper.className = 'deck-manager-row-wrapper';
@@ -83,19 +114,13 @@ ui.showCardModal = function(card = null, decks = [], selectedDeckId = '') {
         wrapper.innerHTML = buildRow({ hanzi: '', pinyin: '', meaning: '' }, rowIndex);
         const newRowEl = wrapper.firstElementChild;
         listEl.appendChild(newRowEl);
-        const newHanzi = newRowEl.querySelector('[data-field="hanzi"]');
-        const newPinyin = newRowEl.querySelector('[data-field="pinyin"]');
-        const newMeaning = newRowEl.querySelector('[data-field="meaning"]');
-        handleRowAutoFill(newHanzi, newPinyin, newMeaning);
+        bindRowActions(newRowEl);
     };
 
     document.getElementById('deck-manager-add-card').onclick = () => addRow();
 
     listEl.querySelectorAll('.card-edit-row').forEach(row => {
-        const hanziInput = row.querySelector('[data-field="hanzi"]');
-        const pinyinInput = row.querySelector('[data-field="pinyin"]');
-        const meaningInput = row.querySelector('[data-field="meaning"]');
-        handleRowAutoFill(hanziInput, pinyinInput, meaningInput);
+        bindRowActions(row);
     });
 
     const btnSave = document.getElementById('btn-form-save');

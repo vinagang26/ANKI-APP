@@ -151,39 +151,39 @@ ui.showDeckManager = function(deck) {
 
         const actionButton = row.querySelector('[data-card-action="menu"]');
         if (actionButton) {
-            actionButton.addEventListener('click', () => {
+            actionButton.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const cardId = actionButton.dataset.cardId;
                 const card = app.library.cards[cardId] || null;
+                const existingPopover = document.querySelector('.deck-menu-popover');
+                if (existingPopover) existingPopover.remove();
+
                 const menu = document.createElement('div');
                 menu.className = 'deck-menu-popover';
+                menu.style.position = 'absolute';
+                menu.style.right = '10px';
+                menu.style.zIndex = '100000';
                 menu.innerHTML = `
-                    <button class="menu-option" data-menu-action="remove" data-card-id="${cardId}">Remove card</button>
-                    <button class="menu-option" data-menu-action="relocate" data-card-id="${cardId}">Relocate card</button>
+                    <button class="menu-option danger" data-menu-action="delete">Delete row</button>
                 `;
 
-                const existing = actionButton.parentElement.querySelector('.deck-menu-popover');
-                if (existing) existing.remove();
-                actionButton.parentElement.appendChild(menu);
+                row.appendChild(menu);
 
-                menu.querySelectorAll('[data-menu-action]').forEach(opt => {
-                    opt.addEventListener('click', (event) => {
+                const deleteBtn = menu.querySelector('[data-menu-action="delete"]');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', (event) => {
                         event.stopPropagation();
-                        const action = opt.dataset.menuAction;
-                        if (action === 'remove') {
-                            if (card) {
-                                app.deleteCard(card.id);
-                            } else {
-                                row.remove();
-                            }
-                        } else if (action === 'relocate') {
-                            // Placeholder for future relocate behavior.
-                        }
                         menu.remove();
                         if (card) {
-                            ui.showDeckManager(deckRef);
+                            app.deleteCard(card.id);
+                        }
+                        row.remove();
+                        const remainingRows = listEl.querySelectorAll('.deck-manager-row');
+                        if (!remainingRows.length) {
+                            listEl.innerHTML = '<div class="deck-manager-empty">No cards in this deck yet.</div>';
                         }
                     });
-                });
+                }
             });
         }
     };
