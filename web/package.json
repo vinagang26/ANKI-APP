@@ -1,0 +1,14 @@
+{
+    "name": "chinese-anki",
+    "version": "1.0.0",
+    "description": "Chinese flashcard desktop app",
+    "main": "main.js",
+    "scripts": {
+        "dev": "electron .",
+        "build": "electron-builder"
+    },
+    "dependencies": {
+        "electron": "latest",
+        "electron-builder": "latest"
+    }
+}

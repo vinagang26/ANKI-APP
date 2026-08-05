@@ -157,23 +157,31 @@ ui.showDeckManager = function(deck) {
                 const card = app.library.cards[cardId] || null;
                 const existingPopover = document.querySelector('.deck-menu-popover');
                 if (existingPopover) existingPopover.remove();
+                document.querySelectorAll('.deck-manager-row').forEach(r => r.classList.remove('active-menu'));
+
+                row.classList.add('active-menu');
 
                 const menu = document.createElement('div');
                 menu.className = 'deck-menu-popover';
                 menu.style.position = 'absolute';
                 menu.style.right = '10px';
-                menu.style.zIndex = '100000';
+                menu.style.zIndex = '999999';
                 menu.innerHTML = `
                     <button class="menu-option danger" data-menu-action="delete">Delete row</button>
                 `;
 
                 row.appendChild(menu);
 
+                const removePopover = () => {
+                    menu.remove();
+                    row.classList.remove('active-menu');
+                };
+
                 const deleteBtn = menu.querySelector('[data-menu-action="delete"]');
                 if (deleteBtn) {
                     deleteBtn.addEventListener('click', (event) => {
                         event.stopPropagation();
-                        menu.remove();
+                        removePopover();
                         if (card) {
                             app.deleteCard(card.id);
                         }

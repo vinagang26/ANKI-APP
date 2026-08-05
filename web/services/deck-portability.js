@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     const FORMAT_VERSION = 1;
     const DECK_FILE_TYPE = 'chinese-anki-deck';
 
@@ -37,11 +37,32 @@
 
     function exportDeckToFile(deck, cardsMap, fileName = null) {
         const payload = createPortableDeck(deck, cardsMap);
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+        const jsonStr = JSON.stringify(payload, null, 2);
+        const defaultName = `${sanitizeFileName(fileName || deck.name || 'deck')}.json`;
+
+        const tryNativeExport = () => {
+            try {
+                if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.export_deck === 'function') {
+                    const result = window.pywebview.api.export_deck(defaultName, jsonStr);
+                    if (result !== false) {
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.warn('Native deck export failed, falling back to browser download.', error);
+            }
+            return false;
+        };
+
+        if (tryNativeExport()) {
+            return;
+        }
+
+        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `${sanitizeFileName(fileName || deck.name || 'deck')}.json`;
+        anchor.download = defaultName;
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);

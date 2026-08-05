@@ -33,6 +33,25 @@ class StorageApi:
             print("Error saving cards to file:", e)
             return False
 
+    def export_deck(self, filename, content):
+        try:
+            save_path = webview.windows[0].create_file_dialog(
+                webview.SAVE_DIALOG,
+                save_filename=filename,
+                file_types=('JSON Files (*.json)', 'All Files (*.*)')
+            )
+            if save_path:
+                if isinstance(save_path, (list, tuple)):
+                    save_path = save_path[0]
+                if save_path:
+                    with open(save_path, 'w', encoding='utf-8') as f:
+                        f.write(content)
+                    return True
+        except Exception as e:
+            print("Error exporting deck:", e)
+        return False
+
+
 def resolve_web_dir(base_dir):
     # If running as PyInstaller executable, check live project directory & working directory first
     if getattr(sys, 'frozen', False):
