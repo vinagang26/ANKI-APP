@@ -10,6 +10,7 @@ This documentation suite provides a complete, factual, and detailed technical br
 
 | # | Chapter Document | Focus Area & Description |
 | :--- | :--- | :--- |
+| **MAP** | [**Developer Codebase Map**](file:///C:/Users/Admin/OneDrive/Tài liệu/GitHub/ANKI-APP/web/docs/CODEBASE_MAP.md) | **Start Here!** Mental model of the application, architecture summary, and 30-minute onboarding guide. |
 | **00** | [**Project Overview**](file:///C:/Users/Admin/OneDrive/Tài liệu/GitHub/ANKI-APP/web/docs/00_Project_Overview.md) | High-level system architecture, major features, tech stack, script execution sequence, and overall startup lifecycle. |
 | **01** | [**Folder Structure**](file:///C:/Users/Admin/OneDrive/Tài liệu/GitHub/ANKI-APP/web/docs/01_Folder_Structure.md) | Exhaustive directory tree mapping every file and folder purpose, responsibilities, exported symbols, and consumer usages. |
 | **02** | [**Application Flow**](file:///C:/Users/Admin/OneDrive/Tài liệu/GitHub/ANKI-APP/web/docs/02_Application_Flow.md) | Detailed operational lifecycle from script load, PyWebView host handshake, LocalStorage migration, event handling, to UI render. |
